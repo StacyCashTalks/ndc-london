@@ -1,0 +1,42 @@
+name: Set-up Custom Domain
+
+on:
+  workflow_dispatch
+
+env:
+  ResourceGroup: ent-demo-rg
+  SwaName: ent-demo-swa
+  SubDomain: ndc-london
+
+jobs:
+  add-custom-domain:
+    name: Add Custom Domain to SWA
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: false    
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get SWA Hostname
+        uses: azure/CLI@v1
+        id: get-hostname
+        with:
+          inlineScript: |
+            SWA_HOSTNAME=$(az staticwebapp environment list -n $SwaName -g $ResourceGroup --query "[?name=='default'].hostname " -o tsv)
+            echo $SWA_HOSTNAME
+            echo SWA_HOSTNAME=$SWA_HOSTNAME >> $GITHUB_OUTPUT
+
+      - name: Set DNS Record
+        id: set-dns-record
+        run: Porkbun.DNS/Porkbun.DNS.MakingApp -k ${{ secrets.PORKBUN_KEY }} -s ${{ secrets.PORKBUN_SECRET }} -d $SubDomain -h ${{ steps.get-hostname.outputs.SWA_HOSTNAME }}
+
+      - name: Set Custom Domain
+        id: set-swa-custom-domain
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az staticwebapp hostname set -n $SwaName -g $ResourceGroup --hostname $SubDomain.stacy.cloud
