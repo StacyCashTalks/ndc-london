@@ -1,0 +1,59 @@
+﻿@inject TodoService TodoService
+
+<div class="@(!_editMode ? "hide" : string.Empty)">
+    <div>
+        <input type="text" class="edit-label" @bind="@Todo!.Label" @ref="_labelEditTextBox" @onkeypress="SaveOnEnter" />
+        <span class="pointer" @onclick="ToggleEditMode">&#128190;</span>
+    </div>
+</div>
+<div class="@(_editMode ? "hide" : string.Empty)">
+    <div>
+        <input type="checkbox" @onclick="StateChange" checked="@Todo!.Complete" id="@($"cb-{Todo!.Id}")" @onkeypress="SaveOnEnter">
+        <label for="@($"cb-{Todo!.Id}")" class="@(Todo!.Complete ? "complete" : string.Empty)" @onkeypress="SaveOnEnter">@Todo!.Label</label>
+        <span @onclick="ToggleEditMode">🖋</span>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    [EditorRequired]
+    public Todo? Todo { get; set; }
+
+    private bool _editMode = false;
+    private ElementReference _labelEditTextBox;
+
+    private async void StateChange()
+    {
+        Todo!.Complete = !Todo.Complete;
+        await TodoService.UpdateTodo(Todo);
+    }
+
+    private async Task ToggleEditMode()
+    {
+        if (_editMode)
+        {
+            if (string.IsNullOrWhiteSpace(Todo!.Label))
+            {
+                return;
+            }
+
+            await TodoService.UpdateTodo(Todo);
+        }
+        
+        _editMode = !_editMode;
+
+        if (_editMode)
+        {
+            await _labelEditTextBox.FocusAsync();
+        }
+    }
+
+    public async void SaveOnEnter(KeyboardEventArgs e)
+    {
+        if (e.Code is "Enter" or "NumpadEnter")
+        {
+            await ToggleEditMode();
+        }
+    }
+}
+

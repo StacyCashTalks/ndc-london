@@ -1,0 +1,10 @@
+﻿.complete {
+    text-decoration: line-through;
+}
+
+div {
+    padding-top: 5px;
+    font-size: 1.25em
+}
+
+.hide { display: none; }

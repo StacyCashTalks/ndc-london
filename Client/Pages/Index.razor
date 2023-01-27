@@ -1,0 +1,74 @@
+﻿@page "/"
+@inject TodoService TodoService
+
+<PageTitle>Todos</PageTitle>
+
+<h1>Here are your todos!</h1>
+
+@if (TodoService.NotCompleteTodos is null || TodoService.CompleteTodos is null)
+{
+    <div>Loading...</div>
+}
+else
+{
+    <input type="text" @ref="_newTodoEntry" @bind="_newTodo" class="edit-label" @onkeypress="SaveOnEnter" @bind:event="oninput" />
+    <span class="pointer" @onclick="AddTodo">&#128190;</span>
+    foreach (var todo in TodoService.NotCompleteTodos)
+    {
+            <TodoItem Todo="@todo" />
+    }
+    if (TodoService.CompleteTodos.Count > 0)
+    {
+        <h2>Completed Todos</h2>
+        foreach (var todo in TodoService.CompleteTodos)
+        {
+            <TodoItem Todo="@todo"/>
+        }
+    }
+}
+
+@code
+{
+    private string _newTodo = string.Empty;
+    private ElementReference _newTodoEntry;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            await _newTodoEntry.FocusAsync();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await TodoService.LoadTodos();
+        TodoService.RefreshRequested += RefreshMe;
+    }
+
+    private void RefreshMe()
+    {
+        StateHasChanged();
+    }
+
+    private async Task AddTodo()
+    {
+        if (string.IsNullOrWhiteSpace(_newTodo))
+        {
+            return;
+        }
+
+        await TodoService.AddTodo(new Todo { Label = _newTodo });
+        _newTodo = string.Empty;
+        RefreshMe();
+        await _newTodoEntry.FocusAsync();
+    }
+
+    public async void SaveOnEnter(KeyboardEventArgs e)
+    {
+        if (e.Code is "Enter" or "NumpadEnter")
+        {
+            await AddTodo();
+        }
+    }
+}

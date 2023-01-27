@@ -1,0 +1,19 @@
+{
+  "routes": [
+    {
+      "route": "api/todos",
+      "methods": [
+        "POST",
+        "PUT",
+        "DELETE"
+      ],
+      "allowedRoles": [
+        "authorised"
+      ]
+    }
+  ],
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [ "/images/*.{png,jpg,gif}", "/css/*" ]
+  }
+}
