@@ -1,0 +1,34 @@
+name: Create and Setup SWA Infrastructure
+
+on:
+  workflow_dispatch
+
+env:
+  ResourceGroup: ent-demo-rg
+  SwaName: ent-demo-swa
+  Region: westeurope
+
+jobs:
+  swa-create:
+    name: Ensure SWA is Created
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions/checkout@v3
+        with:
+          submodules: false
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Create SWA
+        id: create-swa
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.42.0
+          inlineScript: |
+            az group create -n $ResourceGroup -l $Region
+            az deployment group create --resource-group $ResourceGroup --template-file main.bicep  --parameters name=$SwaName sku=standard
+            az staticwebapp appsettings set --name $SwaName --resource-group $ResourceGroup --setting-name CosmosEndpoint=${{ secrets.COSMOS_ENDPOINT  }} CosmosKey=${{ secrets.COSMOS_KEY }} TodoContainerName=${{ secrets.TODO_CONTAINER_NAME }} TodoDatabaseName=${{ secrets.TODO_DATABASE_NAME }}
